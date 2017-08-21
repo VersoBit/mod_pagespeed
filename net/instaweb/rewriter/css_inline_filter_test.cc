@@ -732,6 +732,24 @@ TEST_F(CssInlineFilterTest, DisabledForAmp) {
       "<style>/* pretend there is a @font-face here */</style>");
 }
 
+TEST_F(CssInlineFilterTest, BasicCsp) {
+  AddFilter(RewriteOptions::kInlineCss);
+  SetResponseWithDefaultHeaders("a.css", kContentTypeCss, "a{margin:0}", 100);
+  TurnOnDebug();
+
+  const char kCspNoInline[] =
+      "<meta http-equiv=\"Content-Security-Policy\" content=\"style-src *;\">";
+  const char kCspYesInline[] =
+      "<meta http-equiv=\"Content-Security-Policy\" "
+      "content=\"style-src * 'unsafe-inline';\">";
+
+  ValidateNoChanges("no_inline_csp",
+                    StrCat(kCspNoInline, CssLinkHref("a.css")));
+  ValidateExpected("yes_inline_csp",
+                   StrCat(kCspYesInline, CssLinkHref("a.css")),
+                   StrCat(kCspYesInline, "<style>a{margin:0}</style>"));
+}
+
 }  // namespace
 
 }  // namespace net_instaweb
